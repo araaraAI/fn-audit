@@ -55,6 +55,7 @@ def audit(db: str, table: str | None = None, text_col=None, label_col=None,
                     "trust_verdict": verdict(by_sev)},
         "findings": findings,
         "agent_brief": agent_brief(t, findings),
+        "agent_brief_en": agent_brief(t, findings, "en"),
     }
 
 
@@ -68,19 +69,25 @@ def verdict(by_sev: dict) -> str:
     return "no-false-negative-signals-found"
 
 
-def agent_brief(t, findings: list[dict]) -> str:
+def agent_brief(t, findings: list[dict], lang: str = "ja") -> str:
     """ツールの応答に同梱する前提。エージェントが0件を不在と読む前に必ず読む文面。"""
-    lines = []
-    for f in findings:
-        if f["severity"] in ("critical", "high"):
-            lines.append(f'[{f["severity"]}] {f["title"]} -> {f["agent_impact"]}')
+    ttl = "title" if lang == "ja" else "title_en"
+    imp = "agent_impact" if lang == "ja" else "agent_impact_en"
+    lines = [f'[{f["severity"]}] {f[ttl]} -> {f[imp]}'
+             for f in findings if f["severity"] in ("critical", "high")]
     horizon = next((f for f in findings if f["detector"] == "FN-5 coverage-horizon"), None)
     if horizon:
         e = horizon["evidence"]
-        lines.insert(0, f'このデータ源の観測範囲は {e["first_date"]}〜{e["last_date"]}。'
-                        f'範囲外は必ず0件になるが、それは事象の不在を意味しない。')
+        lines.insert(0, (
+            f'このデータ源の観測範囲は {e["first_date"]}〜{e["last_date"]}。'
+            f'範囲外は必ず0件になるが、それは事象の不在を意味しない。') if lang == "ja" else (
+            f'This source observes {e["first_date"]} to {e["last_date"]}. Anything outside '
+            f'that window returns zero by construction, which is not evidence of absence.'))
     if not lines:
-        return "既知の偽陰性要因は検出されていない。ただし未観測の要因が無いことは保証しない。"
+        return ("既知の偽陰性要因は検出されていない。ただし未観測の要因が無いことは保証しない。"
+                if lang == "ja" else
+                "No known false-negative signals were found. That is not a guarantee that "
+                "none exist.")
     return "\n".join(lines)
 
 
@@ -89,16 +96,21 @@ def render(rep: dict) -> str:
     out.append(f'fn_audit  {s["db"]} :: {s["table"]}  ({s["rows"]:,} 行)')
     out.append(f'  text={s["text_col"]}  label={s["label_col"]}  time={s["time_col"]}')
     for n in s["inference_notes"]:
-        out.append(f'  推定: {n}')
+        out.append(f'  推定 / inferred: {n["ja"]}')
+        out.append(f'                   {n["en"]}')
     out.append("")
     sm = rep["summary"]
-    out.append(f'判定: {sm["trust_verdict"]}   指摘 {sm["findings"]}件  {sm["by_severity"]}')
+    out.append(f'判定 / verdict: {sm["trust_verdict"]}   '
+               f'指摘 {sm["findings"]}件 / {sm["findings"]} findings  {sm["by_severity"]}')
     out.append("")
     for f in rep["findings"]:
         out.append(f'{MARK[f["severity"]]}[{f["severity"]:8}] {f["detector"]}')
-        out.append(f'     {f["title"]}')
-        out.append(f'     影響: {f["agent_impact"]}')
-        out.append(f'     検証: {f["suggested_probe"]}')
+        out.append(f'     JA  {f["title"]}')
+        out.append(f'         影響: {f["agent_impact"]}')
+        out.append(f'         検証: {f["suggested_probe"]}')
+        out.append(f'     EN  {f["title_en"]}')
+        out.append(f'         impact: {f["agent_impact_en"]}')
+        out.append(f'         probe:  {f["suggested_probe_en"]}')
         out.append("")
     return "\n".join(out)
 

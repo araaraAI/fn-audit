@@ -9,13 +9,20 @@ deterministic counting, so every finding reproduces.
 ```
 $ python3 fn_audit/cli.py --db examples/sample_feed.csv
 
-判定: unsafe-for-counting   指摘 6件  {'critical': 1, 'high': 3, 'info': 2}
+判定 / verdict: unsafe-for-counting   指摘 6件 / 6 findings  {'critical': 1, 'high': 3, 'info': 2}
 
 !![critical] FN-1 vocabulary-gap
-     ラベル「buyback」(180件) の表記が本文に無い（一致率 0%）
-     影響: 「buyback」で検索したエージェントは 180 件を取りこぼし、「該当なし」と結論する
-     検証: 代替表記の候補「treasury shares」（このラベルの 100% に出現／その語の 100% がこのラベル）
+     JA  ラベル「buyback」(180件) の表記が本文に無い（一致率 0%）
+         影響: 「buyback」で検索したエージェントは 180 件を取りこぼし、「該当なし」と結論する
+         検証: 代替表記の候補「treasury shares」（このラベルの 100% に出現／その語の 100% がこのラベル）
+     EN  Label "buyback" (180 rows) never appears in the text (0% of its rows contain it)
+         impact: An agent searching for "buyback" misses 180 rows and concludes
+                 "no such records", although they exist
+         probe:  Candidate wording: "treasury shares" (appears in 100% of this label;
+                 100% of rows containing it carry this label)
 ```
+
+Every finding is reported in both English and Japanese.
 
 ## Why this exists
 
@@ -63,11 +70,14 @@ Requires Python 3.10+. No dependencies (PostgreSQL support needs `psycopg`, opti
 ## Output
 
 - `findings[]` — each carries `evidence` (numbers), `agent_impact` (how an agent goes wrong)
-  and `suggested_probe` (how to check it yourself)
+  and `suggested_probe` (how to check it yourself). **Every finding is written in both
+  English and Japanese** (`title` / `title_en`, `agent_impact` / `agent_impact_en`,
+  `suggested_probe` / `suggested_probe_en`); a finding missing either language fails to
+  construct.
 - `summary.trust_verdict` — `unsafe-for-counting` / `needs-guardrails` / `minor-gaps` /
   `no-false-negative-signals-found`
-- `agent_brief` — **meant to be embedded in your tool's own response**, so the agent reads
-  the caveat before it reads a `0`
+- `agent_brief` (Japanese) and `agent_brief_en` — **meant to be embedded in your tool's own
+  response**, so the agent reads the caveat before it reads a `0`
 
 ## Design promises
 
@@ -88,8 +98,6 @@ Requires Python 3.10+. No dependencies (PostgreSQL support needs `psycopg`, opti
 - The antonym lexicon ships with a small Japanese finance/disclosure set plus generic
   English. Extend it with `--lexicon`.
 - Content vs. routing column detection relies on column-name conventions.
-- **Report text is currently Japanese.** The structured fields (`detector`, `severity`,
-  `evidence` with all counts, coverage and precision) are language-neutral.
 - PostgreSQL support is written but has not been exercised against a live server.
 
 ## Origin
@@ -117,6 +125,7 @@ MIT
 （FN-1）、対義語の片側欠落（FN-2）、ラベルと中身の乖離（FN-3）、「その他」への埋没（FN-4）、
 観測範囲・空白・末尾の沈黙（FN-5）、件数の頭打ち（FN-6）です。
 
+指摘はすべて日英併記です（`title` / `title_en` のように `_en` 版を必ず持ちます）。
 `agent_brief` は、自分のツールの応答に同梱して使うことを前提にした短文です。
 エージェントが `0` を読む前に、その `0` の意味を読ませるためにあります。
 

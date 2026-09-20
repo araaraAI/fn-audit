@@ -118,6 +118,35 @@ class SyntheticTest(unittest.TestCase):
         self.assertIn("treasury shares", term)
         self.assertFalse(term.split()[0].lower() in ("the", "of", "concerning"))
 
+    def test_every_finding_carries_both_languages(self):
+        """日英のどちらかだけを更新して食い違うのを防ぐ（_f が構築時に落とす）。"""
+        d = str(date.today())
+        rows = [("買戻し", f"自己株式の取得に関する件 {i}", d) for i in range(120)]
+        rows += [("その他", f"通期業績予想の上方修正について {i}", d) for i in range(60)]
+        rep = self._audit(rows)
+        self.assertTrue(rep["findings"])
+        for f in rep["findings"]:
+            for k in ("title", "title_en", "agent_impact", "agent_impact_en",
+                      "suggested_probe", "suggested_probe_en"):
+                self.assertTrue(f.get(k), f'{f["detector"]} に {k} が無い')
+            self.assertNotEqual(f["title"], f["title_en"])
+        for n in rep["source"]["inference_notes"]:
+            self.assertEqual(set(n), {"ja", "en"})
+
+    def test_agent_brief_has_english_version(self):
+        d = str(date.today() - timedelta(days=3))
+        rows = [("決算", f"決算短信 {i}", str(date.today() - timedelta(days=k)))
+                for k in range(10) for i in range(5)]
+        rep = self._audit(rows)
+        self.assertIn("観測範囲", rep["agent_brief"])
+        self.assertIn("This source observes", rep["agent_brief_en"])
+
+    def test_missing_language_is_rejected(self):
+        import detectors as _d
+        with self.assertRaises(ValueError):
+            _d._f("FN-X test", "info", {"ja": "あ"}, {}, {"ja": "い", "en": "b"},
+                  {"ja": "う", "en": "c"})
+
     def test_agent_brief_contains_horizon(self):
         d = str(date.today() - timedelta(days=3))
         rows = [("決算", f"決算短信 {i}", d) for i in range(30)]

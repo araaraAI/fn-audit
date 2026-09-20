@@ -46,7 +46,7 @@ class Target:
     time_col: str | None
     rows: int
     columns: list[ColumnStat] = field(default_factory=list)
-    inferred: list[str] = field(default_factory=list)
+    inferred: list[dict] = field(default_factory=list)   # {"ja": ..., "en": ...}
     label_is_content: bool = True
 
 
@@ -121,8 +121,11 @@ def infer(conn: sqlite3.Connection, table: str, text_col=None, label_col=None,
         if cand:
             named = [s for s in cand if TEXT_NAME.search(s.name)]
             text_col = max(named or cand, key=lambda s: s.avg_len).name
-            notes.append(f"text_col={text_col} を推定（平均長 {by[text_col].avg_len:.0f}字"
-                         f"{'・列名一致' if named else ''}）")
+            notes.append({
+                "ja": f"text_col={text_col} を推定（平均長 {by[text_col].avg_len:.0f}字"
+                      f"{'・列名一致' if named else ''}）",
+                "en": f"inferred text_col={text_col} (mean length "
+                      f"{by[text_col].avg_len:.0f}{', name match' if named else ''})"})
 
     if label_col is None:
         # 分類列＝値の種類が少なく繰り返す文字列。0件判定の入口になりやすい。
@@ -139,22 +142,29 @@ def infer(conn: sqlite3.Connection, table: str, text_col=None, label_col=None,
                                        -x[1].distinct))
             align, best = scored[0]
             label_col = best.name
-            notes.append(f"label_col={label_col} を推定（{best.distinct}種・本文語彙一致 "
-                         f"{align:.0%}）")
+            notes.append({
+                "ja": f"label_col={label_col} を推定（{best.distinct}種・本文語彙一致 "
+                      f"{align:.0%}）",
+                "en": f"inferred label_col={label_col} ({best.distinct} distinct values, "
+                      f"{align:.0%} vocabulary overlap with the text)"})
             if len(scored) > 1:
-                notes.append("他の候補: " + ", ".join(
-                    f"{s.name}({a:.0%})" for a, s in scored[1:4]))
+                alts = ", ".join(f"{s.name}({a:.0%})" for a, s in scored[1:4])
+                notes.append({"ja": f"他の候補: {alts}", "en": f"other candidates: {alts}"})
 
     if time_col is None:
         cand = [s for s in stats if s.date_like > 0.8]
         cand.sort(key=lambda s: (0 if TIME_NAME.search(s.name) else 1, -s.date_like))
         if cand:
             time_col = cand[0].name
-            notes.append(f"time_col={time_col} を推定")
+            notes.append({"ja": f"time_col={time_col} を推定",
+                          "en": f"inferred time_col={time_col}"})
 
     t = Target(table, text_col, label_col, time_col, rows, stats, notes)
     if label_col and NON_CONTENT_NAME.search(label_col):
         t.label_is_content = False
-        notes.append(f"label_col={label_col} は経路/状態列とみなす"
-                     f"（内容分類として監査するなら --label-col で明示）")
+        notes.append({
+            "ja": f"label_col={label_col} は経路/状態列とみなす"
+                  f"（内容分類として監査するなら --label-col で明示）",
+            "en": f"treating label_col={label_col} as a routing/state column "
+                  f"(pass --label-col to audit a content taxonomy instead)"})
     return t
