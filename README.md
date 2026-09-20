@@ -1,5 +1,9 @@
 # fn_audit
 
+[![tests](https://github.com/araaraAI/fn-audit/actions/workflows/tests.yml/badge.svg)](https://github.com/araaraAI/fn-audit/actions/workflows/tests.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+
 **An agent cannot tell "the world contains no such record" from "the thing I called returned `[]`."**
 
 `fn_audit` audits a *live* data source — the one your agent actually queries — for the
@@ -66,6 +70,9 @@ Columns are inferred and the inference is printed; override with `--text-col`,
 memory, never written to. Exit code is `2` when a `critical` finding exists.
 
 Requires Python 3.10+. No dependencies (PostgreSQL support needs `psycopg`, optional).
+A full machine-readable report for the bundled example lives at
+[`examples/sample_report.json`](examples/sample_report.json), so you can see the output shape
+without running anything.
 
 ## Output
 

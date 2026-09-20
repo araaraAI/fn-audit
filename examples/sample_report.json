@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-09-20T04:06:18+00:00",
+  "source": {
+    "db": "examples/sample_feed.csv",
+    "table": "sample_feed",
+    "rows": 240,
+    "text_col": "headline",
+    "label_col": "category",
+    "time_col": "disclosed_on",
+    "inference_notes": [
+      {
+        "ja": "text_col=headline を推定（平均長 59字・列名一致）",
+        "en": "inferred text_col=headline (mean length 59, name match)"
+      },
+      {
+        "ja": "label_col=category を推定（2種・本文語彙一致 0%）",
+        "en": "inferred label_col=category (2 distinct values, 0% vocabulary overlap with the text)"
+      },
+      {
+        "ja": "time_col=disclosed_on を推定",
+        "en": "inferred time_col=disclosed_on"
+      }
+    ],
+    "label_is_content": true
+  },
+  "summary": {
+    "findings": 6,
+    "by_severity": {
+      "critical": 1,
+      "high": 3,
+      "info": 2
+    },
+    "trust_verdict": "unsafe-for-counting"
+  },
+  "findings": [
+    {
+      "detector": "FN-1 vocabulary-gap",
+      "severity": "critical",
+      "title": "ラベル「buyback」(180件) の表記が本文に無い（一致率 0%）",
+      "title_en": "Label \"buyback\" (180 rows) never appears in the text (0% of its rows contain it)",
+      "evidence": {
+        "label": "buyback",
+        "rows": 180,
+        "exact_hits_in_text": 0,
+        "best_partial": "ac",
+        "best_partial_hits": 180,
+        "actual_notation": [
+          "treasury shares",
+          "acquisition"
+        ]
+      },
+      "agent_impact": "「buyback」で検索したエージェントは 180 件を取りこぼし、「該当なし」と結論する（実際には存在する）",
+      "agent_impact_en": "An agent searching for \"buyback\" misses 180 rows and concludes \"no such records\", although they exist",
+      "suggested_probe": "代替表記の候補「treasury shares」（このラベルの 100% に出現／その語の 100% がこのラベル）。同義語として登録する前に 1件だけ中身を確認する",
+      "suggested_probe_en": "Candidate wording: \"treasury shares\" (appears in 100% of this label; 100% of rows containing it carry this label). Check one row before registering it as a synonym"
+    },
+    {
+      "detector": "FN-1 vocabulary-gap",
+      "severity": "high",
+      "title": "ラベル「guidance」(60件) の表記が本文に無い（一致率 0%）",
+      "title_en": "Label \"guidance\" (60 rows) never appears in the text (0% of its rows contain it)",
+      "evidence": {
+        "label": "guidance",
+        "rows": 60,
+        "exact_hits_in_text": 0,
+        "best_partial": "nce",
+        "best_partial_hits": 240,
+        "actual_notation": [
+          "full-year forecast",
+          "upward revision",
+          "concerning the upward"
+        ]
+      },
+      "agent_impact": "「guidance」で検索したエージェントは 60 件を取りこぼし、「該当なし」と結論する（実際には存在する）",
+      "agent_impact_en": "An agent searching for \"guidance\" misses 60 rows and concludes \"no such records\", although they exist",
+      "suggested_probe": "代替表記の候補「full-year forecast」（このラベルの 100% に出現／その語の 100% がこのラベル）。同義語として登録する前に 1件だけ中身を確認する",
+      "suggested_probe_en": "Candidate wording: \"full-year forecast\" (appears in 100% of this label; 100% of rows containing it carry this label). Check one row before registering it as a synonym"
+    },
+    {
+      "detector": "FN-3 label-drift",
+      "severity": "high",
+      "title": "ラベル「guidance」(60件) の中身は主に「full-year forecast」（100%）",
+      "title_en": "Label \"guidance\" (60 rows) is mostly about \"full-year forecast\" (100%)",
+      "evidence": {
+        "label": "guidance",
+        "rows": 60,
+        "dominant_terms": [
+          {
+            "term": "full-year forecast",
+            "coverage": 1.0,
+            "precision": 1.0
+          },
+          {
+            "term": "upward revision",
+            "coverage": 1.0,
+            "precision": 1.0
+          },
+          {
+            "term": "concerning the upward",
+            "coverage": 1.0,
+            "precision": 1.0
+          }
+        ]
+      },
+      "agent_impact": "「guidance」を額面どおり解釈したエージェントは、60 件の中身が 「full-year forecast」であることに気づかないまま集計する",
+      "agent_impact_en": "An agent taking \"guidance\" at face value aggregates 60 rows without noticing they are actually \"full-year forecast\"",
+      "suggested_probe": "ラベルに注記を付ける、または「full-year forecast」で再問い合わせして中身を確認する",
+      "suggested_probe_en": "Annotate the label, or re-query with \"full-year forecast\" to see what the rows really are"
+    },
+    {
+      "detector": "FN-3 label-drift",
+      "severity": "high",
+      "title": "ラベル「buyback」(180件) の中身は主に「treasury shares」（100%）",
+      "title_en": "Label \"buyback\" (180 rows) is mostly about \"treasury shares\" (100%)",
+      "evidence": {
+        "label": "buyback",
+        "rows": 180,
+        "dominant_terms": [
+          {
+            "term": "treasury shares",
+            "coverage": 1.0,
+            "precision": 1.0
+          },
+          {
+            "term": "acquisition",
+            "coverage": 1.0,
+            "precision": 1.0
+          }
+        ]
+      },
+      "agent_impact": "「buyback」を額面どおり解釈したエージェントは、180 件の中身が 「treasury shares」であることに気づかないまま集計する",
+      "agent_impact_en": "An agent taking \"buyback\" at face value aggregates 180 rows without noticing they are actually \"treasury shares\"",
+      "suggested_probe": "ラベルに注記を付ける、または「treasury shares」で再問い合わせして中身を確認する",
+      "suggested_probe_en": "Annotate the label, or re-query with \"treasury shares\" to see what the rows really are"
+    },
+    {
+      "detector": "FN-0 taxonomy-alignment",
+      "severity": "info",
+      "title": "ラベル列「category」と本文「headline」の語彙一致率 0%",
+      "title_en": "Vocabulary overlap between label column \"category\" and text \"headline\": 0%",
+      "evidence": {
+        "label_col": "category",
+        "text_col": "headline",
+        "alignment": 0.0
+      },
+      "agent_impact": "この値が低いほど、ラベル名をそのまま検索語にしたエージェントは空振りする",
+      "agent_impact_en": "The lower this is, the more often searching by label name returns nothing",
+      "suggested_probe": "一致率が低いのに分類列として提供するなら、同義語展開を必ず挟む",
+      "suggested_probe_en": "If you expose this as a taxonomy despite low overlap, put synonym expansion in front of it"
+    },
+    {
+      "detector": "FN-5 coverage-horizon",
+      "severity": "info",
+      "title": "観測範囲 2026-08-22 〜 2026-09-20（30日、実データのある日 30日）",
+      "title_en": "Observed window 2026-08-22 to 2026-09-20 (30 days, 30 of them with data)",
+      "evidence": {
+        "first_date": "2026-08-22",
+        "last_date": "2026-09-20",
+        "span_days": 30,
+        "days_with_data": 30,
+        "days_without_data": 0,
+        "rows": 240
+      },
+      "agent_impact": "2026-08-22 より前を問い合わせたエージェントは必ず0件を得る。これは「事象が無い」ではなく「このデータ源が持っていない」",
+      "agent_impact_en": "Any query before 2026-08-22 returns zero by construction. That means this source does not hold it, not that nothing happened",
+      "suggested_probe": "0件応答に必ずこの観測範囲を同梱する",
+      "suggested_probe_en": "Always attach this window to a zero-result response"
+    }
+  ],
+  "agent_brief": "このデータ源の観測範囲は 2026-08-22〜2026-09-20。範囲外は必ず0件になるが、それは事象の不在を意味しない。\n[critical] ラベル「buyback」(180件) の表記が本文に無い（一致率 0%） -> 「buyback」で検索したエージェントは 180 件を取りこぼし、「該当なし」と結論する（実際には存在する）\n[high] ラベル「guidance」(60件) の表記が本文に無い（一致率 0%） -> 「guidance」で検索したエージェントは 60 件を取りこぼし、「該当なし」と結論する（実際には存在する）\n[high] ラベル「guidance」(60件) の中身は主に「full-year forecast」（100%） -> 「guidance」を額面どおり解釈したエージェントは、60 件の中身が 「full-year forecast」であることに気づかないまま集計する\n[high] ラベル「buyback」(180件) の中身は主に「treasury shares」（100%） -> 「buyback」を額面どおり解釈したエージェントは、180 件の中身が 「treasury shares」であることに気づかないまま集計する",
+  "agent_brief_en": "This source observes 2026-08-22 to 2026-09-20. Anything outside that window returns zero by construction, which is not evidence of absence.\n[critical] Label \"buyback\" (180 rows) never appears in the text (0% of its rows contain it) -> An agent searching for \"buyback\" misses 180 rows and concludes \"no such records\", although they exist\n[high] Label \"guidance\" (60 rows) never appears in the text (0% of its rows contain it) -> An agent searching for \"guidance\" misses 60 rows and concludes \"no such records\", although they exist\n[high] Label \"guidance\" (60 rows) is mostly about \"full-year forecast\" (100%) -> An agent taking \"guidance\" at face value aggregates 60 rows without noticing they are actually \"full-year forecast\"\n[high] Label \"buyback\" (180 rows) is mostly about \"treasury shares\" (100%) -> An agent taking \"buyback\" at face value aggregates 180 rows without noticing they are actually \"treasury shares\""
+}

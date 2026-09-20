@@ -1,0 +1,36 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run the test suite
+        run: python tests/test_fn_audit.py
+      - name: Audit the bundled example and check the verdict
+        run: |
+          python fn_audit/cli.py --db examples/sample_feed.csv --json /tmp/report.json
+          python - <<'PY'
+          import json
+          r = json.load(open("/tmp/report.json"))
+          assert r["summary"]["trust_verdict"] == "unsafe-for-counting", r["summary"]
+          ids = {f["detector"] for f in r["findings"]}
+          assert "FN-1 vocabulary-gap" in ids, ids
+          for f in r["findings"]:          # 日英が揃っていることを公開版でも守る
+              assert f["title_en"] and f["agent_impact_en"], f["detector"]
+          print("example audit ok:", r["summary"])
+          PY
