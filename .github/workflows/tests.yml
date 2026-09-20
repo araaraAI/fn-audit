@@ -23,7 +23,9 @@ jobs:
         run: python tests/test_fn_audit.py
       - name: Audit the bundled example and check the verdict
         run: |
-          python fn_audit/cli.py --db examples/sample_feed.csv --json /tmp/report.json
+          # exit 2 is the documented "a critical finding exists" code, not a failure.
+          python fn_audit/cli.py --db examples/sample_feed.csv --json /tmp/report.json \
+            || [ $? -eq 2 ]
           python - <<'PY'
           import json
           r = json.load(open("/tmp/report.json"))

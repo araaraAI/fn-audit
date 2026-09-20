@@ -67,7 +67,10 @@ python3 fn_audit/cli.py --db data.sqlite --lexicon my_antonyms.json
 
 Columns are inferred and the inference is printed; override with `--text-col`,
 `--label-col`, `--time-col`. SQLite is opened read-only; PostgreSQL is sampled into
-memory, never written to. Exit code is `2` when a `critical` finding exists.
+memory, never written to.
+
+**Exit code `2` means a `critical` finding exists** — it is a verdict, not a crash. In CI,
+treat it as data: `fn_audit ... || [ $? -eq 2 ]`. A genuine error exits `1`.
 
 Requires Python 3.10+. No dependencies (PostgreSQL support needs `psycopg`, optional).
 A full machine-readable report for the bundled example lives at
